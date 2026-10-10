@@ -188,8 +188,13 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
 
         if path == "/":
             self.serve_file(STATIC_DIR / "index.html" if (STATIC_DIR / "index.html").exists() else BASE_DIR / "index.html")
+        elif path == "/gallery" or path == "/gallery/":
+            self.serve_file(get_cabinet_dir() / "index.html")
+        elif path.startswith("/gallery/"):
+            rel = urllib.parse.unquote(path[len("/gallery/"):])
+            self.serve_file(get_cabinet_dir() / rel)
         elif path.startswith("/static/"):
-            rel = path[len("/static/"):]
+            rel = urllib.parse.unquote(path[len("/static/"):])
             self.serve_file(STATIC_DIR / rel)
         elif path == "/api/config":
             self.send_json(get_config())
@@ -407,15 +412,32 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": f"同步执行异常: {e}"}, 500)
 
     def handle_api_open_system(self, body):
-        rel_path = body.get("rel_path")
-        if not rel_path:
-            return
-        full_path = get_pic_dir() / rel_path
-        if not full_path.exists():
-            return
-        if sys.platform == "win32":
-            subprocess.Popen(["explorer.exe", f"/select,{full_path}"])
-        self.send_json({"ok": True})
+        rel_path = body.get("rel_path", "").strip()
+        target = (get_pic_dir() / rel_path).resolve() if rel_path else get_pic_dir().resolve()
+        
+        if not target.exists():
+            parent = target.parent
+            if parent.exists():
+                target = parent
+            else:
+                self.send_json({"ok": False, "error": f"路径不存在: {target}"}, 404)
+                return
+
+        try:
+            if sys.platform.startswith("win"):
+                target_str = str(target).replace("/", "\\")
+                if target.is_file():
+                    # Windows 原生命令高亮选中文件
+                    subprocess.Popen(f'explorer.exe /select,"{target_str}"', shell=True)
+                else:
+                    os.startfile(target_str)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", "-R" if target.is_file() else "", str(target)])
+            else:
+                subprocess.Popen(["xdg-open", str(target.parent if target.is_file() else target)])
+            self.send_json({"ok": True, "path": str(target)})
+        except Exception as e:
+            self.send_json({"ok": False, "error": f"打开失败: {e}"}, 500)
 
 
 def main():

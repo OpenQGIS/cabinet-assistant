@@ -150,18 +150,35 @@
     });
 
     // 打开系统文件位置
-    document.getElementById('btnOpenExplorer').addEventListener('click', () => {
-      if (!activeItem) return;
-      fetch('/api/open-system', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonBody({ rel_path: activeItem.rel_path })
-      });
+    document.getElementById('btnOpenExplorer').addEventListener('click', async () => {
+      if (!activeItem) {
+        showToast('请先从左侧列表选择一幅作品');
+        return;
+      }
+      if (window.location.protocol === 'https:' && window.location.hostname.includes('github.io')) {
+        showToast('GitHub Pages 纯网页环境无法直接调起本地 Explorer，请在本地双击 editor.bat 使用此功能');
+        return;
+      }
+      try {
+        const res = await fetch('/api/open-system', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonBody({ rel_path: activeItem.rel_path })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`已在文件资源管理器中打开位置: ${activeItem.title}`);
+        } else {
+          showToast('打开失败: ' + (data.error || '未知错误'));
+        }
+      } catch (e) {
+        showToast('无法连接本地服务: ' + e.message + ' (请确认 editor.bat 正在运行)');
+      }
     });
 
     // 打开画廊预览
     document.getElementById('btnOpenGallery').addEventListener('click', () => {
-      window.open('http://127.0.0.1:8099/static/index.html', '_blank');
+      window.open('/gallery/', '_blank');
     });
 
     // 同步画廊
