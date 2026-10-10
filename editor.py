@@ -346,9 +346,14 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
                         except Exception:
                             pass
 
-                    # 尝试从同级文件夹推断默认分类
+                    # 尝试从同级文件夹推断默认分类（最多只精确到国家，绝不深入省份，限制最多2项）
                     folder_parts = Path(rel_img_path).parts[:-1]
-                    default_sub = " · ".join(folder_parts) if folder_parts else "未分类"
+                    if len(folder_parts) >= 2:
+                        default_sub = [folder_parts[0], folder_parts[1]]
+                    elif len(folder_parts) == 1:
+                        default_sub = folder_parts[0]
+                    else:
+                        default_sub = "未分类"
 
                     # 基础信息
                     title = meta.get("title", stem)

@@ -106,9 +106,43 @@
   // 1. 初始化
   // -------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initEvents();
     bootstrapApp();
   });
+
+  // 主题切换 (Dark / Light)
+  function initTheme() {
+    const savedTheme = localStorage.getItem('cabinet_assistant_theme') || 'dark';
+    applyTheme(savedTheme);
+
+    const btnToggleTheme = document.getElementById('btnToggleTheme');
+    if (btnToggleTheme) {
+      btnToggleTheme.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        applyTheme(current === 'dark' ? 'light' : 'dark');
+      });
+    }
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('cabinet_assistant_theme', theme);
+    const btnToggleTheme = document.getElementById('btnToggleTheme');
+    if (btnToggleTheme) {
+      const sunIcon = btnToggleTheme.querySelector('.theme-icon-sun');
+      const moonIcon = btnToggleTheme.querySelector('.theme-icon-moon');
+      if (theme === 'light') {
+        if (sunIcon) sunIcon.style.display = 'none';
+        if (moonIcon) moonIcon.style.display = 'inline-block';
+        btnToggleTheme.title = '当前为浅色主题，点击切换为暗色 (Dark)';
+      } else {
+        if (sunIcon) sunIcon.style.display = 'inline-block';
+        if (moonIcon) moonIcon.style.display = 'none';
+        btnToggleTheme.title = '当前为暗色主题，点击切换为浅色 (Light)';
+      }
+    }
+  }
 
   function initEvents() {
     // 搜索与过滤器
@@ -459,7 +493,8 @@
         }
 
         const fileObj = await img.entry.getFile();
-        const defaultSub = pathParts.join(' · ') || '未分类';
+        // 默认大分类最多只提取到国家层级，绝不深入省份，限制最多2项
+        const defaultSub = pathParts.length >= 2 ? [pathParts[0], pathParts[1]] : (pathParts[0] || '未分类');
         const itemId = meta.id || stem.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
 
         let thumbBlobUrl = '';
@@ -810,6 +845,10 @@
         subCats = [item.subCategory.trim()];
       }
     }
+    // 强制限制大分类最多不超过 2 个（大分类+国家，不含省份）
+    if (subCats.length > 2) {
+      subCats = subCats.slice(0, 2);
+    }
     currentSubCategories = subCats;
     renderSubCategories();
 
@@ -856,10 +895,14 @@
 
   function addSubCategory(sub) {
     sub = (sub || '').trim();
-    if (sub && !currentSubCategories.includes(sub)) {
-      currentSubCategories.push(sub);
-      renderSubCategories();
+    if (!sub) return;
+    if (currentSubCategories.includes(sub)) return;
+    if (currentSubCategories.length >= 2) {
+      showToast('专题大分类最多设置 2 个标签（精确到国家即可，省份请在标签添加）');
+      return;
     }
+    currentSubCategories.push(sub);
+    renderSubCategories();
   }
 
   function removeSubCategory(sub) {
