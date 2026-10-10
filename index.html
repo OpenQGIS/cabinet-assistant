@@ -66,7 +66,9 @@
         </div>
         <div class="filter-pills">
           <button class="pill-btn active" data-filter="all">全部 <span id="countAll">0</span></button>
-          <button class="pill-btn" data-filter="done">已完成 <span id="countDone">0</span></button>
+          <button class="pill-btn" data-filter="published">已上架 <span id="countPublished">0</span></button>
+          <button class="pill-btn" data-filter="modified">待推送 <span id="countModified">0</span></button>
+          <button class="pill-btn" data-filter="done">待上架 <span id="countDone">0</span></button>
           <button class="pill-btn" data-filter="draft">草稿 <span id="countDraft">0</span></button>
           <button class="pill-btn" data-filter="new">待标注 <span id="countNew">0</span></button>
         </div>
@@ -130,7 +132,7 @@
           <button class="tab-btn active" data-tab="metaTab">空间事实表单</button>
           <button class="tab-btn" data-tab="rawTab">MD 源码预览</button>
         </div>
-        <div class="form-status-badge" id="formStatusBadge">已完成</div>
+        <div class="form-status-badge" id="formStatusBadge">已上架</div>
       </div>
 
       <!-- Tab 1: Form Inputs -->
@@ -139,11 +141,25 @@
         <div class="form-group status-switch-group">
           <label>发布状态 (Status)</label>
           <div class="status-radio-group">
+            <label class="status-radio published">
+              <input type="radio" name="itemStatus" value="published">
+              <span class="status-label">
+                <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="12" r="9"/><polyline points="8 12 11 15 16 9"/></svg>
+                <span>已上架 (published)</span>
+              </span>
+            </label>
+            <label class="status-radio modified">
+              <input type="radio" name="itemStatus" value="modified">
+              <span class="status-label">
+                <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15.5-6.5L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15.5 6.5L3 16"/></svg>
+                <span>上架修改待推送 (modified)</span>
+              </span>
+            </label>
             <label class="status-radio done">
               <input type="radio" name="itemStatus" value="done" checked>
               <span class="status-label">
                 <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>已完成待上架 (done)</span>
+                <span>待上架推送 (done)</span>
               </span>
             </label>
             <label class="status-radio draft">
@@ -154,7 +170,7 @@
               </span>
             </label>
           </div>
-          <div class="form-tip">标记为 <b>done</b> 的作品才会被编译进画廊；<b>draft</b> 会保留在本地，不上线。</div>
+          <div class="form-tip">标记为 <b>published</b>、<b>modified</b> 或 <b>done</b> 的作品将被同步编译打包上架；<b>draft</b> 保留在本地草稿，不上线。</div>
         </div>
 
         <!-- Title & ID -->

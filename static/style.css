@@ -20,6 +20,8 @@
   --accent-blue-bg: rgba(62, 136, 247, 0.12);
   --accent-green: #34d399;
   --accent-green-bg: rgba(52, 211, 153, 0.12);
+  --accent-purple: #c084fc;
+  --accent-purple-bg: rgba(192, 132, 252, 0.12);
   --accent-orange: #fb923c;
   --accent-orange-bg: rgba(251, 146, 60, 0.12);
   
@@ -308,12 +310,12 @@ body {
 }
 
 .filter-pills {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
 }
 
 .pill-btn {
-  flex: 1;
   padding: 4px 6px;
   font-size: 11px;
   background-color: var(--bg-card);
@@ -325,6 +327,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .pill-btn span {
@@ -425,9 +428,19 @@ body {
   font-weight: 600;
 }
 
-.status-badge-mini.done {
+.status-badge-mini.published {
   background-color: var(--accent-green-bg);
   color: var(--accent-green);
+}
+
+.status-badge-mini.modified {
+  background-color: var(--accent-purple-bg);
+  color: var(--accent-purple);
+}
+
+.status-badge-mini.done {
+  background-color: var(--accent-blue-bg);
+  color: var(--accent-blue);
 }
 
 .status-badge-mini.draft {
@@ -640,16 +653,31 @@ body {
   padding: 2px 8px;
   border-radius: 10px;
   font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.form-status-badge.published {
+  background-color: var(--accent-green-bg);
+  color: var(--accent-green);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.form-status-badge.modified {
+  background-color: var(--accent-purple-bg);
+  color: var(--accent-purple);
+  border-color: rgba(192, 132, 252, 0.3);
 }
 
 .form-status-badge.done {
-  background-color: var(--accent-green-bg);
-  color: var(--accent-green);
+  background-color: var(--accent-blue-bg);
+  color: var(--accent-blue);
+  border-color: rgba(62, 136, 247, 0.3);
 }
 
 .form-status-badge.draft {
   background-color: var(--accent-orange-bg);
   color: var(--accent-orange);
+  border-color: rgba(251, 146, 60, 0.3);
 }
 
 .form-scrollable {
@@ -722,12 +750,12 @@ textarea {
 }
 
 .status-radio-group {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .status-radio {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -745,10 +773,22 @@ textarea {
   accent-color: var(--accent-gold);
 }
 
-.status-radio.done:has(input:checked) {
+.status-radio.published:has(input:checked) {
   border-color: var(--accent-green);
   background-color: var(--accent-green-bg);
   color: var(--accent-green);
+}
+
+.status-radio.modified:has(input:checked) {
+  border-color: var(--accent-purple);
+  background-color: var(--accent-purple-bg);
+  color: var(--accent-purple);
+}
+
+.status-radio.done:has(input:checked) {
+  border-color: var(--accent-blue);
+  background-color: var(--accent-blue-bg);
+  color: var(--accent-blue);
 }
 
 .status-radio.draft:has(input:checked) {

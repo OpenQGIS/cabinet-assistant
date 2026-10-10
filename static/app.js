@@ -32,6 +32,8 @@
   
   // Status counts
   const elCountAll = document.getElementById('countAll');
+  const elCountPublished = document.getElementById('countPublished');
+  const elCountModified = document.getElementById('countModified');
   const elCountDone = document.getElementById('countDone');
   const elCountDraft = document.getElementById('countDraft');
   const elCountNew = document.getElementById('countNew');
@@ -503,11 +505,15 @@
   // -------------------------------------------------------------
   function updateCounts() {
     const total = currentItems.length;
+    const published = currentItems.filter(i => i.status === 'published').length;
+    const modified = currentItems.filter(i => i.status === 'modified').length;
     const done = currentItems.filter(i => i.status === 'done').length;
     const draft = currentItems.filter(i => i.status === 'draft').length;
     const unannotated = currentItems.filter(i => i.status === 'unannotated').length;
 
     elCountAll.textContent = total;
+    if (elCountPublished) elCountPublished.textContent = published;
+    if (elCountModified) elCountModified.textContent = modified;
     elCountDone.textContent = done;
     elCountDraft.textContent = draft;
     elCountNew.textContent = unannotated;
@@ -519,6 +525,8 @@
 
     const filtered = currentItems.filter(item => {
       // 状态筛选
+      if (activeFilter === 'published' && item.status !== 'published') return false;
+      if (activeFilter === 'modified' && item.status !== 'modified') return false;
       if (activeFilter === 'done' && item.status !== 'done') return false;
       if (activeFilter === 'draft' && item.status !== 'draft') return false;
       if (activeFilter === 'new' && item.status !== 'unannotated') return false;
@@ -561,8 +569,10 @@
         itemEl.className = 'file-item' + (activeItem && activeItem.rel_path === item.rel_path ? ' active' : '');
         
         let statusBadge = '<span class="status-badge-mini done">DONE</span>';
-        if (item.status === 'draft') statusBadge = '<span class="status-badge-mini draft">DRAFT</span>';
-        if (item.status === 'unannotated') statusBadge = '<span class="status-badge-mini new">NEW</span>';
+        if (item.status === 'published') statusBadge = '<span class="status-badge-mini published">PUB</span>';
+        else if (item.status === 'modified') statusBadge = '<span class="status-badge-mini modified">MOD</span>';
+        else if (item.status === 'draft') statusBadge = '<span class="status-badge-mini draft">DRAFT</span>';
+        else if (item.status === 'unannotated') statusBadge = '<span class="status-badge-mini new">NEW</span>';
 
         const thumbSrc = (appMode === 'server')
           ? `/api/thumb?path=${encodeURIComponent(item.rel_path)}`
@@ -685,7 +695,13 @@
     currentSubCategories = subCats;
     renderSubCategories();
 
-    const statusVal = item.status === 'draft' ? 'draft' : 'done';
+    const validStatuses = ['published', 'modified', 'done', 'draft'];
+    let statusVal = 'done';
+    if (validStatuses.includes(item.status)) {
+      statusVal = item.status;
+    } else if (item.status === 'unannotated' || !item.has_md) {
+      statusVal = 'draft';
+    }
     const radio = document.querySelector(`input[name="itemStatus"][value="${statusVal}"]`);
     if (radio) radio.checked = true;
     updateFormStatusBadge(statusVal);
@@ -696,8 +712,15 @@
   }
 
   function updateFormStatusBadge(status) {
-    elFormStatusBadge.className = 'form-status-badge ' + (status === 'done' ? 'done' : 'draft');
-    elFormStatusBadge.textContent = status === 'done' ? '已完成 (DONE)' : '草稿 (DRAFT)';
+    elFormStatusBadge.className = 'form-status-badge ' + (status || 'draft');
+    const badgeTextMap = {
+      'published': '已上架 (PUB)',
+      'modified': '待推送 (MOD)',
+      'done': '待上架 (DONE)',
+      'draft': '草稿 (DRAFT)',
+      'unannotated': '待标注 (NEW)'
+    };
+    elFormStatusBadge.textContent = badgeTextMap[status] || (status ? status.toUpperCase() : '草稿');
   }
 
   function renderSubCategories() {
