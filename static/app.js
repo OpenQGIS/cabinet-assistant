@@ -27,7 +27,6 @@
   const elSearchInput = document.getElementById('searchInput');
   const elViewerEmpty = document.getElementById('viewerEmpty');
   const elConnectOverlay = document.getElementById('connectOverlay');
-  const elBtnConnectFolder = document.getElementById('btnConnectFolder');
   const elBtnConnectFolderBig = document.getElementById('btnConnectFolderBig');
   const elViewerStatusbar = document.getElementById('viewerStatusbar');
   
@@ -258,15 +257,17 @@
       }
     });
 
-    // 顶部路径与更换路径按钮
-    const btnChangeTop = document.getElementById('btnChangePathTop');
-    if (btnChangeTop) btnChangeTop.addEventListener('click', openSettingsModal);
-
+    // 统一画廊路径配置唯一入口
     const pathBadgeBox = document.getElementById('pathBadgeBox');
-    if (pathBadgeBox) pathBadgeBox.addEventListener('click', openSettingsModal);
+    if (pathBadgeBox) pathBadgeBox.addEventListener('click', triggerConfigurePath);
+
+    const btnSettings = document.getElementById('btnSettings');
+    if (btnSettings) btnSettings.addEventListener('click', triggerConfigurePath);
 
     const btnEmptyPath = document.getElementById('btnEmptySetPath');
-    if (btnEmptyPath) btnEmptyPath.addEventListener('click', openSettingsModal);
+    if (btnEmptyPath) btnEmptyPath.addEventListener('click', triggerConfigurePath);
+
+    if (elBtnConnectFolderBig) elBtnConnectFolderBig.addEventListener('click', triggerConfigurePath);
 
     // 打开系统文件位置
     document.getElementById('btnOpenExplorer').addEventListener('click', async () => {
@@ -306,8 +307,7 @@
     document.getElementById('btnCloseSync').addEventListener('click', () => elSyncModal.close());
     document.getElementById('btnDoneSync').addEventListener('click', () => elSyncModal.close());
 
-    // 设置弹窗
-    document.getElementById('btnSettings').addEventListener('click', openSettingsModal);
+    // 设置弹窗辅助事件
     document.getElementById('btnCloseSettings').addEventListener('click', () => elSettingsModal.close());
     document.getElementById('btnCancelSettings').addEventListener('click', () => elSettingsModal.close());
     document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
@@ -328,15 +328,53 @@
         if (!inDialog) elSettingsModal.close();
       });
     }
-
-    // 连接文件夹按钮 (Pages 模式)
-    if (elBtnConnectFolder) elBtnConnectFolder.addEventListener('click', pickCabinetFolder);
-    if (elBtnConnectFolderBig) elBtnConnectFolderBig.addEventListener('click', pickCabinetFolder);
   }
 
   // -------------------------------------------------------------
-  // 2. 模式检测与数据加载
+  // 2. 模式检测与数据加载 (唯一路径入口状态管理)
   // -------------------------------------------------------------
+  const ICON_SETTINGS_SVG = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>';
+  const ICON_FOLDER_SVG = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg>';
+
+  function updatePathEntrypointUI() {
+    const btnSettings = document.getElementById('btnSettings');
+    const btnOpenExplorer = document.getElementById('btnOpenExplorer');
+    const btnSyncCabinet = document.getElementById('btnSyncCabinet');
+    if (!btnSettings) return;
+
+    if (appMode === 'server') {
+      // 本地服务模式：唯一入口为「路径设置」
+      btnSettings.className = 'btn ghost';
+      btnSettings.innerHTML = `${ICON_SETTINGS_SVG}<span>路径设置</span>`;
+      btnSettings.title = '设置 Cabinet 仓库路径或浏览本地目录';
+      if (btnOpenExplorer) btnOpenExplorer.style.display = 'inline-flex';
+      if (btnSyncCabinet) btnSyncCabinet.style.display = 'inline-flex';
+    } else {
+      // 纯静态 Pages 模式：收起外部系统与脚本按钮
+      if (btnOpenExplorer) btnOpenExplorer.style.display = 'none';
+      if (btnSyncCabinet) btnSyncCabinet.style.display = 'none';
+
+      // 唯一入口为「选择/更换本地文件夹」
+      if (!fsRootHandle) {
+        btnSettings.className = 'btn primary';
+        btnSettings.innerHTML = `${ICON_FOLDER_SVG}<span>选择本地文件夹</span>`;
+        btnSettings.title = '选择本地 Cabinet 或 pic 文件夹授权读写';
+      } else {
+        btnSettings.className = 'btn ghost';
+        btnSettings.innerHTML = `${ICON_FOLDER_SVG}<span>更换文件夹</span>`;
+        btnSettings.title = `已连接「${fsRootHandle.name}」，点击更换其他画廊文件夹`;
+      }
+    }
+  }
+
+  function triggerConfigurePath() {
+    if (appMode === 'server') {
+      openSettingsModal();
+    } else {
+      pickCabinetFolder();
+    }
+  }
+
   async function bootstrapApp() {
     const modeBadge = document.getElementById('modeBadge');
     // 优先检测本地 Python 服务
@@ -354,8 +392,9 @@
           const shortPath = (data.cabinet_path || 'Cabinet 连接就绪').replace(/\\/g, '/');
           elCabinetPath.textContent = shortPath;
           elCabinetPath.title = data.cabinet_path || '';
-          if (elBtnConnectFolder) elBtnConnectFolder.style.display = 'none';
           if (elConnectOverlay) elConnectOverlay.style.display = 'none';
+
+          updatePathEntrypointUI();
 
           currentItems = data.items || [];
           updateCounts();
@@ -384,8 +423,8 @@
       modeBadge.className = 'mode-badge fs';
       modeBadge.title = '运行于纯静态模式，通过 File System Access API 原位访问本地文件夹';
     }
-    if (elBtnConnectFolder) elBtnConnectFolder.style.display = 'inline-flex';
     elCabinetPath.textContent = '待连接本地文件夹';
+    updatePathEntrypointUI();
 
     // 尝试恢复以往授权的文件夹句柄
     const restored = await tryRestoreFsHandle();
@@ -448,6 +487,7 @@
     fsPicHandle = picHandle;
     elCabinetPath.textContent = handle.name;
     if (elConnectOverlay) elConnectOverlay.style.display = 'none';
+    updatePathEntrypointUI();
 
     await scanFsItems(picHandle);
   }
