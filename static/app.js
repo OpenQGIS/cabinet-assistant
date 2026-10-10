@@ -669,7 +669,20 @@
     } else if (item._fileEntry) {
       if (!item._blobUrl) {
         const ext = item.filename.split('.').pop().toLowerCase();
-        if (ext !== 'tif' && ext !== 'tiff') {
+        if (ext === 'tif' || ext === 'tiff') {
+          try {
+            showToast('正在解析大尺寸测绘 TIFF 影像...');
+            const f = await item._fileEntry.getFile();
+            const decoded = await decodeTiffFile(f);
+            item._blobUrl = decoded.fullBlobUrl;
+            if (!item._thumbUrl) {
+              item._thumbUrl = decoded.thumbBlobUrl;
+              renderFileList();
+            }
+          } catch (err) {
+            console.warn('UTIF decode error:', err);
+          }
+        } else {
           try {
             const f = await item._fileEntry.getFile();
             item._blobUrl = URL.createObjectURL(f);
@@ -721,9 +734,54 @@
         tempImg.src = imgUrl;
         return;
       }
-      showToast('该图片浏览器可能无法直接解码原生图，建议本地运行 editor.bat 查看');
+      showToast('图片加载遇到异常，请确认源文件完整性');
     };
     tempImg.src = imgUrl;
+  }
+
+  // 纯前端解码 TIFF 影像
+  async function decodeTiffFile(fileObj) {
+    if (typeof UTIF === 'undefined') {
+      throw new Error('UTIF 库未加载');
+    }
+    const buffer = await fileObj.arrayBuffer();
+    const ifds = UTIF.decode(buffer);
+    if (!ifds || ifds.length === 0) {
+      throw new Error('无效的 TIFF 影像');
+    }
+    const firstIfd = ifds[0];
+    UTIF.decodeImage(buffer, firstIfd);
+    const rgba = UTIF.toRGBA8(firstIfd);
+    const width = firstIfd.width || firstIfd.t256[0];
+    const height = firstIfd.height || firstIfd.t257[0];
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.createImageData(width, height);
+    imgData.data.set(rgba);
+    ctx.putImageData(imgData, 0, 0);
+
+    const fullBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Canvas export failed')), 'image/jpeg', 0.92);
+    });
+
+    const thumbCanvas = document.createElement('canvas');
+    const maxThumbDim = 120;
+    const scale = Math.min(maxThumbDim / width, maxThumbDim / height);
+    thumbCanvas.width = Math.round(width * scale);
+    thumbCanvas.height = Math.round(height * scale);
+    const tCtx = thumbCanvas.getContext('2d');
+    tCtx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+    const thumbBlob = await new Promise(res => thumbCanvas.toBlob(res, 'image/jpeg', 0.85));
+
+    return {
+      fullBlobUrl: URL.createObjectURL(fullBlob),
+      thumbBlobUrl: URL.createObjectURL(thumbBlob),
+      width,
+      height
+    };
   }
 
   // -------------------------------------------------------------

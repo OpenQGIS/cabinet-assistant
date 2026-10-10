@@ -41,6 +41,10 @@ CONFIG_FILE = BASE_DIR / "config.json"
 PORT_DEFAULT = 8099
 
 IMAGE_EXTS = {".tif", ".tiff", ".jpg", ".jpeg", ".jfif", ".png", ".webp"}
+mimetypes.add_type("image/webp", ".webp")
+mimetypes.add_type("image/jpeg", ".jfif")
+mimetypes.add_type("image/tiff", ".tif")
+mimetypes.add_type("image/tiff", ".tiff")
 
 _config_lock = threading.Lock()
 _config_cache = None
@@ -389,6 +393,26 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
             self.send_error(400, "Missing path param")
             return
         full_path = (get_pic_dir() / rel).resolve()
+        if not full_path.exists():
+            self.send_error(404, "Image not found")
+            return
+
+        ext = full_path.suffix.lower()
+        if ext in (".tif", ".tiff"):
+            CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            cache_key = f"full_{full_path.stem}_{full_path.stat().st_mtime_ns}.webp"
+            cache_file = CACHE_DIR / cache_key
+            if not cache_file.exists():
+                try:
+                    with Image.open(full_path) as im:
+                        im = im.convert("RGB")
+                        im.save(cache_file, "WEBP", quality=92)
+                except Exception as e:
+                    self.send_error(500, f"TIFF convert error: {e}")
+                    return
+            self.serve_file(cache_file)
+            return
+
         self.serve_file(full_path)
 
     def handle_api_thumb(self, params):
