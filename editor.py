@@ -164,6 +164,48 @@ def serialize_frontmatter(meta: dict, body: str) -> str:
     return "\n".join(lines)
 
 
+def choose_directory(initial_dir=""):
+    """调起系统原生目录选择窗口 (Tkinter -> Windows PowerShell -> macOS osascript)"""
+    initial = os.path.abspath(initial_dir) if initial_dir and os.path.exists(initial_dir) else None
+
+    # 方案 1: Tkinter (Windows / macOS / Linux)
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.wm_attributes("-topmost", 1)
+        root.focus_force()
+        folder = filedialog.askdirectory(initialdir=initial, title="选择 Cabinet 项目根目录 (包含 pic 文件夹)")
+        root.destroy()
+        if folder:
+            return os.path.normpath(folder)
+    except Exception:
+        pass
+
+    # 方案 2: Windows PowerShell
+    if sys.platform.startswith("win"):
+        try:
+            ps_script = (
+                "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; "
+                "$f = New-Object System.Windows.Forms.FolderBrowserDialog; "
+                "$f.Description = '选择 Cabinet 项目根目录 (包含 pic 文件夹)'; "
+                "$f.ShowNewFolderButton = $false; "
+            )
+            if initial:
+                ps_script += f"$f.SelectedPath = '{initial}'; "
+            ps_script += "if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $f.SelectedPath }"
+            res = subprocess.run(["powershell", "-NoProfile", "-Command", ps_script],
+                                 capture_output=True, text=True, timeout=60)
+            chosen = res.stdout.strip()
+            if chosen:
+                return os.path.normpath(chosen)
+        except Exception:
+            pass
+
+    return ""
+
+
 class CabinetAssistantHandler(BaseHTTPRequestHandler):
     def send_json(self, data, status=200):
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
@@ -220,6 +262,8 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
         if path == "/api/config":
             save_config(body)
             self.send_json({"ok": True, "config": get_config()})
+        elif path == "/api/pick_dir":
+            self.handle_api_pick_dir(body)
         elif path == "/api/save":
             self.handle_api_save(body)
         elif path == "/api/sync":
@@ -228,6 +272,27 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
             self.handle_api_open_system(body)
         else:
             self.send_error(404, "Not Found")
+
+    def handle_api_pick_dir(self, body):
+        initial = body.get("initial_dir", "").strip() or str(get_cabinet_dir())
+        folder = choose_directory(initial)
+        if not folder:
+            self.send_json({"ok": True, "cancelled": True, "path": ""})
+            return
+
+        if os.path.basename(folder).lower() == "pic" and os.path.isdir(folder):
+            parent = os.path.dirname(folder)
+            if parent:
+                folder = parent
+
+        save_config({"cabinet_path": folder})
+        has_pic = (Path(folder) / "pic").is_dir()
+        self.send_json({
+            "ok": True,
+            "cancelled": False,
+            "path": folder,
+            "has_pic": has_pic
+        })
 
     def serve_file(self, file_path: Path):
         if not file_path.exists() or not file_path.is_file():
@@ -412,8 +477,12 @@ class CabinetAssistantHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": f"同步执行异常: {e}"}, 500)
 
     def handle_api_open_system(self, body):
+        custom_path = body.get("path", "").strip()
         rel_path = body.get("rel_path", "").strip()
-        target = (get_pic_dir() / rel_path).resolve() if rel_path else get_pic_dir().resolve()
+        if custom_path:
+            target = Path(custom_path).resolve()
+        else:
+            target = (get_pic_dir() / rel_path).resolve() if rel_path else get_pic_dir().resolve()
         
         if not target.exists():
             parent = target.parent

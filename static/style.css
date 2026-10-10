@@ -119,6 +119,55 @@ body {
   background-color: var(--border-subtle);
 }
 
+.mode-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  color: var(--accent-green);
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.mode-badge.fs {
+  color: var(--accent-blue);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.path-badge-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.path-badge-container:hover {
+  border-color: var(--accent-gold);
+  background-color: var(--bg-hover);
+}
+
+.path-prefix {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.path-text {
+  color: var(--text-main);
+  font-weight: 500;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .status-indicator {
   display: flex;
   align-items: center;
@@ -185,6 +234,12 @@ body {
 
 .btn.icon-only {
   padding: 6px;
+}
+
+.btn.mini {
+  padding: 2px 8px;
+  font-size: 11px;
+  gap: 4px;
 }
 
 /* ----------------- Layout ----------------- */

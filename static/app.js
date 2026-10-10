@@ -188,6 +188,7 @@
     });
 
     // 快捷键 Ctrl+S
+    // 快捷键 Ctrl+S
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -195,25 +196,32 @@
       }
     });
 
+    // 顶部路径与更换路径按钮
+    const btnChangeTop = document.getElementById('btnChangePathTop');
+    if (btnChangeTop) btnChangeTop.addEventListener('click', openSettingsModal);
+
+    const pathBadgeBox = document.getElementById('pathBadgeBox');
+    if (pathBadgeBox) pathBadgeBox.addEventListener('click', openSettingsModal);
+
+    const btnEmptyPath = document.getElementById('btnEmptySetPath');
+    if (btnEmptyPath) btnEmptyPath.addEventListener('click', openSettingsModal);
+
     // 打开系统文件位置
     document.getElementById('btnOpenExplorer').addEventListener('click', async () => {
-      if (!activeItem) {
-        showToast('请先从左侧列表选择一幅作品');
-        return;
-      }
       if (appMode === 'fs' || (window.location.protocol === 'https:' && window.location.hostname.includes('github.io'))) {
         showToast('GitHub Pages 模式无法直接调起本地 Explorer，请在本地双击 editor.bat 使用此功能');
         return;
       }
       try {
+        const payload = activeItem ? { rel_path: activeItem.rel_path } : {};
         const res = await fetch('/api/open-system', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: jsonBody({ rel_path: activeItem.rel_path })
+          body: jsonBody(payload)
         });
         const data = await res.json();
         if (data.ok) {
-          showToast(`已在文件资源管理器中打开位置: ${activeItem.title}`);
+          showToast(activeItem ? `已在文件资源管理器中定位: ${activeItem.title}` : '已在文件资源管理器中打开画廊图片目录');
         } else {
           showToast('打开失败: ' + (data.error || '未知错误'));
         }
@@ -242,6 +250,23 @@
     document.getElementById('btnCancelSettings').addEventListener('click', () => elSettingsModal.close());
     document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
 
+    const btnPickNative = document.getElementById('btnPickFolderNative');
+    if (btnPickNative) btnPickNative.addEventListener('click', onPickFolderNativeClick);
+
+    const btnOpenExpSetting = document.getElementById('btnOpenExplorerSetting');
+    if (btnOpenExpSetting) btnOpenExpSetting.addEventListener('click', onOpenExplorerSettingClick);
+
+    if (elSettingsModal) {
+      elSettingsModal.addEventListener('click', (e) => {
+        const rect = elSettingsModal.getBoundingClientRect();
+        const inDialog = (
+          rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+          rect.left <= e.clientX && e.clientX <= rect.left + rect.width
+        );
+        if (!inDialog) elSettingsModal.close();
+      });
+    }
+
     // 连接文件夹按钮 (Pages 模式)
     if (elBtnConnectFolder) elBtnConnectFolder.addEventListener('click', pickCabinetFolder);
     if (elBtnConnectFolderBig) elBtnConnectFolderBig.addEventListener('click', pickCabinetFolder);
@@ -251,6 +276,7 @@
   // 2. 模式检测与数据加载
   // -------------------------------------------------------------
   async function bootstrapApp() {
+    const modeBadge = document.getElementById('modeBadge');
     // 优先检测本地 Python 服务
     try {
       const res = await fetch('/api/items', { cache: 'no-store' });
@@ -258,14 +284,30 @@
         const data = await res.json();
         if (data.ok) {
           appMode = 'server';
-          elCabinetPath.textContent = '🟢 本地服务: ' + (data.cabinet_path || 'Cabinet 连接就绪');
+          if (modeBadge) {
+            modeBadge.textContent = '本地服务';
+            modeBadge.className = 'mode-badge';
+            modeBadge.title = '运行于 http://127.0.0.1:8099 本地 Python 服务';
+          }
+          const shortPath = (data.cabinet_path || 'Cabinet 连接就绪').replace(/\\/g, '/');
+          elCabinetPath.textContent = shortPath;
+          elCabinetPath.title = data.cabinet_path || '';
           if (elBtnConnectFolder) elBtnConnectFolder.style.display = 'none';
           if (elConnectOverlay) elConnectOverlay.style.display = 'none';
 
           currentItems = data.items || [];
           updateCounts();
           renderFileList();
-          if (currentItems.length > 0 && !activeItem) selectItem(currentItems[0]);
+          const emptyBtn = document.getElementById('btnEmptySetPath');
+          const emptyTitle = document.getElementById('emptyPromptTitle');
+          if (currentItems.length > 0) {
+            if (emptyBtn) emptyBtn.style.display = 'none';
+            if (emptyTitle) emptyTitle.textContent = '请从左侧选择一幅空间测绘图或遥感影像';
+            if (!activeItem) selectItem(currentItems[0]);
+          } else {
+            if (emptyBtn) emptyBtn.style.display = 'inline-flex';
+            if (emptyTitle) emptyTitle.textContent = '当前路径下未检测到测绘图片或 pic/ 文件夹';
+          }
           return;
         }
       }
@@ -275,13 +317,20 @@
 
     // 切换至 File System Access 静态模式
     appMode = 'fs';
+    if (modeBadge) {
+      modeBadge.textContent = 'GitHub Pages';
+      modeBadge.className = 'mode-badge fs';
+      modeBadge.title = '运行于纯静态模式，通过 File System Access API 原位访问本地文件夹';
+    }
     if (elBtnConnectFolder) elBtnConnectFolder.style.display = 'inline-flex';
-    elCabinetPath.textContent = '☁️ GitHub Pages 模式 (待连接本地文件夹)';
+    elCabinetPath.textContent = '待连接本地文件夹';
 
     // 尝试恢复以往授权的文件夹句柄
     const restored = await tryRestoreFsHandle();
     if (!restored) {
       if (elConnectOverlay) elConnectOverlay.style.display = 'flex';
+      const emptyBtn = document.getElementById('btnEmptySetPath');
+      if (emptyBtn) emptyBtn.style.display = 'inline-flex';
     }
   }
 
@@ -765,17 +814,85 @@
   // 7. 配置弹窗与辅助函数
   // -------------------------------------------------------------
   async function openSettingsModal() {
+    if (appMode === 'server') {
+      try {
+        const res = await fetch('/api/config');
+        const cfg = await res.json();
+        const input = document.getElementById('settingCabinetPath');
+        if (input) input.value = cfg.cabinet_path || '';
+        const statusEl = document.getElementById('settingPathStatus');
+        if (statusEl) {
+          statusEl.innerHTML = `💡 支持选择 <code>Cabinet</code> 根目录（例如 <code>D:\\website\\Cabinet</code>），也可直接选择 <code>pic</code> 文件夹，系统会自动向上解析。`;
+        }
+        elSettingsModal.showModal();
+      } catch (e) {
+        showToast('获取设置失败: ' + e.message);
+      }
+    } else {
+      // Pages 模式直接调起本地文件夹授权
+      pickCabinetFolder();
+    }
+  }
+
+  async function onPickFolderNativeClick() {
+    if (appMode === 'server') {
+      const btn = document.getElementById('btnPickFolderNative');
+      if (btn) btn.disabled = true;
+      showToast('正在调起系统资源管理器，请在弹出窗口中选择 Cabinet 根目录…');
+      try {
+        const cur = (document.getElementById('settingCabinetPath')?.value || '').trim();
+        const res = await fetch('/api/pick_dir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonBody({ initial_dir: cur })
+        });
+        const data = await res.json();
+        if (data.ok && !data.cancelled && data.path) {
+          const input = document.getElementById('settingCabinetPath');
+          if (input) input.value = data.path;
+          const statusEl = document.getElementById('settingPathStatus');
+          if (!data.has_pic) {
+            showToast(`已选路径：${data.path}（未检测到 pic 文件夹）`);
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-red)">⚠️ 提示：目录 <code>${data.path}</code> 下未发现 <code>pic/</code> 文件夹，请确认是否选择正确！</span>`;
+          } else {
+            showToast(`已选择路径：${data.path}`);
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-green)">✓ 检测到 <code>pic/</code> 文件夹，路径有效！点击「保存并重新加载」即可应用。</span>`;
+          }
+        }
+      } catch (e) {
+        showToast('调用资源管理器失败: ' + e.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    } else {
+      pickCabinetFolder();
+    }
+  }
+
+  async function onOpenExplorerSettingClick() {
+    const cur = (document.getElementById('settingCabinetPath')?.value || '').trim();
+    if (!cur) {
+      showToast('请先输入或选择路径');
+      return;
+    }
     if (appMode !== 'server') {
-      showToast('当前为 GitHub Pages 静态模式，请通过顶部「连接本地文件夹」更换路径');
+      showToast('网页模式下无法直接打开本地文件资源管理器');
       return;
     }
     try {
-      const res = await fetch('/api/config');
-      const cfg = await res.json();
-      document.getElementById('settingCabinetPath').value = cfg.cabinet_path || '';
-      elSettingsModal.showModal();
+      const res = await fetch('/api/open-system', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: jsonBody({ path: cur })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('已在系统资源管理器中打开: ' + cur);
+      } else {
+        showToast('打开失败: ' + (data.error || '未知错误'));
+      }
     } catch (e) {
-      showToast('获取设置失败: ' + e.message);
+      showToast('请求异常: ' + e.message);
     }
   }
 
@@ -793,7 +910,7 @@
       if (data.ok) {
         showToast('配置已更新，正在重新加载作品...');
         elSettingsModal.close();
-        bootstrapApp();
+        await bootstrapApp();
       }
     } catch (e) {
       showToast('保存配置异常: ' + e.message);

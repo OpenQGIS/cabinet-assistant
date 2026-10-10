@@ -17,19 +17,31 @@
         <span class="brand-sub">空间制图与遥感标注工作台</span>
       </div>
       <div class="divider"></div>
-      <span class="status-indicator">
-        <span class="status-dot"></span>
-        <span id="cabinetPathDisplay">正在连接 Cabinet...</span>
-      </span>
+      <span class="mode-badge" id="modeBadge">本地服务</span>
+      <div class="path-badge-container" id="pathBadgeBox" title="点击设置或更改画廊文件夹路径">
+        <span class="status-indicator">
+          <span class="status-dot"></span>
+          <span class="path-prefix">画廊目录:</span>
+          <span id="cabinetPathDisplay" class="path-text">正在连接 Cabinet...</span>
+        </span>
+        <button class="btn ghost mini" id="btnChangePathTop" type="button" title="更换画廊文件夹路径">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>更改路径</span>
+        </button>
+      </div>
     </div>
 
     <div class="header-right">
       <button class="btn primary" id="btnConnectFolder" style="display:none;" title="选择本地 Cabinet 或 pic 文件夹授权读写">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span>连接本地文件夹</span>
+        <span>选择本地文件夹</span>
       </button>
-      <button class="btn ghost" id="btnOpenExplorer" title="在系统资源管理器中打开当前图片">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <button class="btn ghost" id="btnSettings" title="设置 Cabinet 仓库路径">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>路径设置</span>
+      </button>
+      <button class="btn ghost" id="btnOpenExplorer" title="在系统资源管理器中打开当前图片或画廊目录">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         <span>打开文件位置</span>
       </button>
       <button class="btn ghost" id="btnOpenGallery" title="在浏览器打开 Cabinet 画廊预览">
@@ -39,9 +51,6 @@
       <button class="btn primary" id="btnSyncCabinet" title="执行 build_cabinet.py 生成切片、下载图并同步 manifest">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         <span>一键编译同步画廊</span>
-      </button>
-      <button class="btn icon-only ghost" id="btnSettings" title="设置 Cabinet 仓库路径">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
   </header>
@@ -76,8 +85,12 @@
 
       <div class="viewer-empty-placeholder" id="viewerEmpty">
         <svg class="ic large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-        <p>请从左侧选择一幅空间测绘图或遥感影像</p>
-        <span>滚轮缩放 · 拖拽平移 · 1:1 细节巡礼</span>
+        <p id="emptyPromptTitle">请从左侧选择一幅空间测绘图或遥感影像</p>
+        <span id="emptyPromptSub">滚轮缩放 · 拖拽平移 · 1:1 细节巡礼</span>
+        <button class="btn primary" id="btnEmptySetPath" style="display:none;margin-top:14px;">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>设置画廊文件夹路径</span>
+        </button>
       </div>
 
       <div class="viewer-connect-overlay" id="connectOverlay" style="display:none;">
@@ -238,19 +251,31 @@
   <dialog class="modal-dialog" id="settingsModal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Cabinet 仓库路径设置</h3>
+        <h3>设置 Cabinet 仓库路径</h3>
         <button class="btn icon-only ghost" id="btnCloseSettings">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label>Cabinet 仓库根目录绝对路径</label>
-          <input type="text" id="settingCabinetPath" class="font-mono">
-          <div class="form-tip">必须包含 <code>pic/</code> 文件夹与 <code>tools/build_cabinet.py</code>。</div>
+          <label>Cabinet 画廊根目录绝对路径（包含 pic/ 文件夹）</label>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <input type="text" id="settingCabinetPath" class="font-mono" style="flex:1;" placeholder="例如 D:\website\Cabinet">
+            <button class="btn secondary" id="btnPickFolderNative" type="button" title="唤起系统原生窗口查找路径">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>浏览选择...</span>
+            </button>
+            <button class="btn ghost" id="btnOpenExplorerSetting" type="button" title="在系统资源管理器中打开此文件夹">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <span>打开</span>
+            </button>
+          </div>
+          <div class="form-tip" id="settingPathStatus">
+            💡 支持选择 <code>Cabinet</code> 项目根目录（例如 <code>D:\website\Cabinet</code>），也可直接选择 <code>pic</code> 文件夹，系统会自动向上解析项目根目录。
+          </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn ghost" id="btnCancelSettings">取消</button>
-        <button class="btn primary" id="btnSaveSettings">保存配置</button>
+        <button class="btn primary" id="btnSaveSettings">保存并重新加载</button>
       </div>
     </div>
   </dialog>
