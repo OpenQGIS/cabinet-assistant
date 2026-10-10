@@ -171,13 +171,21 @@
 
         <!-- Category & Subcategory -->
         <div class="form-group">
-          <label>专题分类 (SubCategory)</label>
-          <input type="text" id="inputSubCategory" placeholder="如：标准地图 · China · 安徽 或 Verygoogmaps">
+          <label>专题分类与属性 (SubCategory)</label>
+          <div class="tags-input-container">
+            <div class="tags-list" id="subCategoriesList"></div>
+            <input type="text" id="inputSubCategoryNew" placeholder="+ 添加专题/属性 (按回车或空格确认)">
+          </div>
           <div class="quick-chips" id="quickSubCategories">
-            <span class="chip" data-val="Verygoogmaps">Verygoogmaps (全球遥感)</span>
-            <span class="chip" data-val="标准地图 · China · 安徽">标准地图 · 安徽</span>
-            <span class="chip" data-val="标准地图 · China · 黑龙江">标准地图 · 黑龙江</span>
-            <span class="chip" data-val="标准地图 · Italy">标准地图 · 意大利</span>
+            <span class="chip" data-val="Verygoogmaps">Verygoogmaps</span>
+            <span class="chip" data-val="地形渲染">地形渲染</span>
+            <span class="chip" data-val="标准地图">标准地图</span>
+            <span class="chip" data-val="China">China</span>
+            <span class="chip" data-val="安徽">安徽</span>
+            <span class="chip" data-val="黑龙江">黑龙江</span>
+            <span class="chip" data-val="Italy">Italy</span>
+            <span class="chip" data-val="遥感影像">遥感影像</span>
+            <span class="chip" data-val="全球自然地理">全球自然地理</span>
           </div>
         </div>
 

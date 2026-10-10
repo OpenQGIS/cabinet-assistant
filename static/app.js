@@ -40,7 +40,8 @@
   const elFormStatusBadge = document.getElementById('formStatusBadge');
   const elInputTitle = document.getElementById('inputTitle');
   const elInputId = document.getElementById('inputId');
-  const elInputSubCategory = document.getElementById('inputSubCategory');
+  const elSubCategoriesList = document.getElementById('subCategoriesList');
+  const elInputSubCategoryNew = document.getElementById('inputSubCategoryNew');
   const elInputRegion = document.getElementById('inputRegion');
   const elInputReviewNumber = document.getElementById('inputReviewNumber');
   const elInputScale = document.getElementById('inputScale');
@@ -50,6 +51,8 @@
   const elTagsList = document.getElementById('tagsList');
   const elInputTagNew = document.getElementById('inputTagNew');
   const elRawMarkdown = document.getElementById('rawMarkdownPreview');
+
+  let currentSubCategories = [];
 
   // Status Bar
   const elInfoRes = document.getElementById('infoResolution');
@@ -163,16 +166,30 @@
     });
 
     // 表单输入时同步 Raw Markdown
-    [elInputTitle, elInputId, elInputSubCategory, elInputRegion, elInputReviewNumber, elInputScale, elInputSource, elInputDescription, elInputDownload].forEach(input => {
+    [elInputTitle, elInputId, elInputRegion, elInputReviewNumber, elInputScale, elInputSource, elInputDescription, elInputDownload].forEach(input => {
       input.addEventListener('input', updateRawMarkdownPreview);
       input.addEventListener('change', updateRawMarkdownPreview);
     });
 
+    // 胶囊快捷添加（支持回车与空格键自动成词）
+    setupCapsuleInput(
+      elInputSubCategoryNew,
+      addSubCategory,
+      () => currentSubCategories,
+      removeSubCategory
+    );
+
+    setupCapsuleInput(
+      elInputTagNew,
+      addTag,
+      () => currentTags,
+      removeTag
+    );
+
     // 快捷标签与分类点击
     document.querySelectorAll('#quickSubCategories .chip').forEach(chip => {
       chip.addEventListener('click', () => {
-        elInputSubCategory.value = chip.dataset.val;
-        updateRawMarkdownPreview();
+        addSubCategory(chip.dataset.val);
       });
     });
 
@@ -180,18 +197,6 @@
       chip.addEventListener('click', () => {
         addTag(chip.dataset.val);
       });
-    });
-
-    // 添加新标签回车
-    elInputTagNew.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const val = elInputTagNew.value.trim();
-        if (val) {
-          addTag(val);
-          elInputTagNew.value = '';
-        }
-      }
     });
 
     // 缩放操作
@@ -208,7 +213,6 @@
       if (activeItem) populateForm(activeItem);
     });
 
-    // 快捷键 Ctrl+S
     // 快捷键 Ctrl+S
     window.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -658,13 +662,28 @@
   function populateForm(item) {
     elInputTitle.value = item.title || '';
     elInputId.value = item.id || '';
-    elInputSubCategory.value = item.subCategory || '';
     elInputRegion.value = item.region || '';
     elInputReviewNumber.value = item.reviewNumber || '';
     elInputScale.value = item.scale || '';
     elInputSource.value = item.source || '';
     elInputDescription.value = item.description || '';
     elInputDownload.checked = item.download !== false;
+
+    // 解析 subCategory 为多胶囊列表
+    let subCats = [];
+    if (Array.isArray(item.subCategory)) {
+      subCats = [...item.subCategory];
+    } else if (typeof item.subCategory === 'string' && item.subCategory.trim()) {
+      if (item.subCategory.includes(' · ')) {
+        subCats = item.subCategory.split(' · ').map(s => s.trim()).filter(Boolean);
+      } else if (item.subCategory.includes(',')) {
+        subCats = item.subCategory.split(',').map(s => s.trim()).filter(Boolean);
+      } else {
+        subCats = [item.subCategory.trim()];
+      }
+    }
+    currentSubCategories = subCats;
+    renderSubCategories();
 
     const statusVal = item.status === 'draft' ? 'draft' : 'done';
     const radio = document.querySelector(`input[name="itemStatus"][value="${statusVal}"]`);
@@ -679,6 +698,32 @@
   function updateFormStatusBadge(status) {
     elFormStatusBadge.className = 'form-status-badge ' + (status === 'done' ? 'done' : 'draft');
     elFormStatusBadge.textContent = status === 'done' ? '已完成 (DONE)' : '草稿 (DRAFT)';
+  }
+
+  function renderSubCategories() {
+    if (!elSubCategoriesList) return;
+    elSubCategoriesList.innerHTML = '';
+    currentSubCategories.forEach(sub => {
+      const tagItem = document.createElement('span');
+      tagItem.className = 'tag-item';
+      tagItem.innerHTML = `<span>${sub}</span><button type="button" class="tag-remove" data-sub="${sub}" aria-label="移除分类"><svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+      tagItem.querySelector('.tag-remove').addEventListener('click', () => removeSubCategory(sub));
+      elSubCategoriesList.appendChild(tagItem);
+    });
+    updateRawMarkdownPreview();
+  }
+
+  function addSubCategory(sub) {
+    sub = (sub || '').trim();
+    if (sub && !currentSubCategories.includes(sub)) {
+      currentSubCategories.push(sub);
+      renderSubCategories();
+    }
+  }
+
+  function removeSubCategory(sub) {
+    currentSubCategories = currentSubCategories.filter(s => s !== sub);
+    renderSubCategories();
   }
 
   function renderTags() {
@@ -706,6 +751,44 @@
     renderTags();
   }
 
+  function setupCapsuleInput(inputEl, addFn, listGetter, removeFn) {
+    if (!inputEl) return;
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        const val = inputEl.value.trim();
+        if (val) {
+          addFn(val);
+          inputEl.value = '';
+        }
+      } else if (e.key === 'Backspace' && !inputEl.value) {
+        const list = listGetter();
+        if (list.length > 0) {
+          removeFn(list[list.length - 1]);
+        }
+      }
+    });
+
+    inputEl.addEventListener('blur', () => {
+      const val = inputEl.value.trim();
+      if (val) {
+        addFn(val);
+        inputEl.value = '';
+      }
+    });
+
+    inputEl.addEventListener('paste', (e) => {
+      const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+      if (text && (text.includes(' ') || text.includes(',') || text.includes('，') || text.includes('、'))) {
+        e.preventDefault();
+        const parts = text.split(/[\s,，、]+/).map(s => s.trim()).filter(Boolean);
+        parts.forEach(addFn);
+        inputEl.value = '';
+      }
+    });
+  }
+
   function updateRawMarkdownPreview() {
     const statusRadio = document.querySelector('input[name="itemStatus"]:checked');
     const status = statusRadio ? statusRadio.value : 'done';
@@ -715,7 +798,12 @@
     metaLines.push(`title: ${elInputTitle.value.trim()}`);
     metaLines.push(`category: gis`);
     metaLines.push(`categoryName: 网上GIS图片分享`);
-    metaLines.push(`subCategory: ${elInputSubCategory.value.trim()}`);
+    if (currentSubCategories.length === 1) {
+      metaLines.push(`subCategory: ${currentSubCategories[0]}`);
+    } else if (currentSubCategories.length > 1) {
+      metaLines.push('subCategory:');
+      currentSubCategories.forEach(s => metaLines.push(`  - ${s}`));
+    }
     if (elInputRegion.value.trim()) metaLines.push(`region: ${elInputRegion.value.trim()}`);
     if (elInputSource.value.trim()) metaLines.push(`source: ${elInputSource.value.trim()}`);
     if (elInputScale.value.trim()) metaLines.push(`scale: ${elInputScale.value.trim()}`);
@@ -750,11 +838,13 @@
     const statusRadio = document.querySelector('input[name="itemStatus"]:checked');
     const status = statusRadio ? statusRadio.value : 'done';
 
+    const subVal = currentSubCategories.length === 1 ? currentSubCategories[0] : currentSubCategories;
+
     const payload = {
       rel_path: activeItem.rel_path,
       id: elInputId.value.trim() || activeItem.id,
       title: elInputTitle.value.trim() || activeItem.title,
-      subCategory: elInputSubCategory.value.trim(),
+      subCategory: subVal,
       region: elInputRegion.value.trim(),
       reviewNumber: elInputReviewNumber.value.trim(),
       scale: elInputScale.value.trim(),
