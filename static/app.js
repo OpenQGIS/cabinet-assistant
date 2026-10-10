@@ -11,6 +11,7 @@
   let appMode = 'server'; // 'server' | 'fs'
   let fsRootHandle = null;
   let fsPicHandle = null;
+  let fsThumbsHandle = null;
 
   let currentItems = [];
   let activeItem = null;
@@ -404,6 +405,12 @@
       // 若直接选择了 pic 目录本身
     }
 
+    try {
+      fsThumbsHandle = await handle.getDirectoryHandle('thumbs');
+    } catch (_) {
+      fsThumbsHandle = null;
+    }
+
     fsPicHandle = picHandle;
     elCabinetPath.textContent = handle.name;
     if (elConnectOverlay) elConnectOverlay.style.display = 'none';
@@ -453,9 +460,38 @@
 
         const fileObj = await img.entry.getFile();
         const defaultSub = pathParts.join(' · ') || '未分类';
+        const itemId = meta.id || stem.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+
+        let thumbBlobUrl = '';
+        let mainBlobUrl = '';
+
+        // 1. 如果存在 thumbs 目录，优先查找预生成的 webp 缩略图（加载极快且原生支持 tif）
+        if (fsThumbsHandle) {
+          try {
+            const th = await fsThumbsHandle.getFileHandle(`${itemId}.webp`);
+            const tf = await th.getFile();
+            thumbBlobUrl = URL.createObjectURL(tf);
+          } catch (_) {
+            try {
+              const th = await fsThumbsHandle.getFileHandle(`${stem}.webp`);
+              const tf = await th.getFile();
+              thumbBlobUrl = URL.createObjectURL(tf);
+            } catch (_) { }
+          }
+        }
+
+        // 2. 如果不是 tif 格式，直接为原图生成 blobUrl
+        if (img.ext !== 'tif' && img.ext !== 'tiff') {
+          try {
+            mainBlobUrl = URL.createObjectURL(fileObj);
+            if (!thumbBlobUrl) {
+              thumbBlobUrl = mainBlobUrl;
+            }
+          } catch (_) { }
+        }
 
         items.push({
-          id: meta.id || stem.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase(),
+          id: itemId,
           title: meta.title || stem,
           filename: img.name,
           rel_path: relPath,
@@ -474,7 +510,9 @@
           file_size: fileObj.size,
           _fileEntry: img.entry,
           _mdEntry: md ? md.entry : null,
-          _dirHandle: dirHandle
+          _dirHandle: dirHandle,
+          _blobUrl: mainBlobUrl,
+          _thumbUrl: thumbBlobUrl
         });
       }
 
@@ -576,10 +614,18 @@
 
         const thumbSrc = (appMode === 'server')
           ? `/api/thumb?path=${encodeURIComponent(item.rel_path)}`
-          : (item._blobUrl || '');
+          : (item._thumbUrl || item._blobUrl || '');
+
+        let thumbMarkup = '';
+        if (thumbSrc) {
+          thumbMarkup = `<img class="file-thumb" src="${thumbSrc}" alt="" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';">
+          <div class="file-thumb placeholder" style="display:none;"><svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><rect x="3" y="3" width="18" height="18"/><polygon points="3 16 9 10 13 14 17 9 21 13 21 21 3 21"/></svg></div>`;
+        } else {
+          thumbMarkup = `<div class="file-thumb placeholder"><svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><rect x="3" y="3" width="18" height="18"/><polygon points="3 16 9 10 13 14 17 9 21 13 21 21 3 21"/></svg></div>`;
+        }
 
         itemEl.innerHTML = `
-          <img class="file-thumb" src="${thumbSrc}" alt="" loading="lazy">
+          ${thumbMarkup}
           <div class="file-info">
             <div class="file-title-row">
               <span class="file-title" title="${item.title}">${item.title}</span>
@@ -622,10 +668,15 @@
       imgUrl = `/api/image?path=${encodeURIComponent(item.rel_path)}`;
     } else if (item._fileEntry) {
       if (!item._blobUrl) {
-        const f = await item._fileEntry.getFile();
-        item._blobUrl = URL.createObjectURL(f);
+        const ext = item.filename.split('.').pop().toLowerCase();
+        if (ext !== 'tif' && ext !== 'tiff') {
+          try {
+            const f = await item._fileEntry.getFile();
+            item._blobUrl = URL.createObjectURL(f);
+          } catch (_) { }
+        }
       }
-      imgUrl = item._blobUrl;
+      imgUrl = item._blobUrl || item._thumbUrl || '';
     }
 
     const tempImg = new Image();
@@ -662,6 +713,15 @@
           elInfoZoom.textContent = `${ratio}%`;
         }
       });
+    };
+
+    tempImg.onerror = function () {
+      if (item._thumbUrl && imgUrl !== item._thumbUrl) {
+        imgUrl = item._thumbUrl;
+        tempImg.src = imgUrl;
+        return;
+      }
+      showToast('该图片浏览器可能无法直接解码原生图，建议本地运行 editor.bat 查看');
     };
     tempImg.src = imgUrl;
   }

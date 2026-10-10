@@ -397,6 +397,14 @@ body {
   border: 1px solid var(--border-subtle);
 }
 
+.file-thumb.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  background-color: var(--bg-card);
+}
+
 .file-info {
   flex: 1;
   min-width: 0;
