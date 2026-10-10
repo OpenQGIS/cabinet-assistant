@@ -24,6 +24,10 @@
     </div>
 
     <div class="header-right">
+      <button class="btn primary" id="btnConnectFolder" style="display:none;" title="选择本地 Cabinet 或 pic 文件夹授权读写">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>连接本地文件夹</span>
+      </button>
       <button class="btn ghost" id="btnOpenExplorer" title="在系统资源管理器中打开当前图片">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         <span>打开文件位置</span>
@@ -74,6 +78,18 @@
         <svg class="ic large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
         <p>请从左侧选择一幅空间测绘图或遥感影像</p>
         <span>滚轮缩放 · 拖拽平移 · 1:1 细节巡礼</span>
+      </div>
+
+      <div class="viewer-connect-overlay" id="connectOverlay" style="display:none;">
+        <div class="connect-card">
+          <div class="connect-icon">📂</div>
+          <h4>当前处于 GitHub Pages 纯静态模式</h4>
+          <p>公网网页无法直接访问你本地电脑的磁盘文件。请点击下方按钮，授权选择你本地电脑的 <b>Cabinet 文件夹</b>（例如 <code>D:\website\Cabinet</code> 或 <code>pic</code>），即可在纯网页中原位读写与标注大图！</p>
+          <div class="connect-actions">
+            <button class="btn primary" id="btnConnectFolderBig">选择本地 Cabinet 文件夹</button>
+            <div class="connect-tip">💡 提示：也可以在本地双击运行 <code>editor.bat</code>（访问 <b>http://127.0.0.1:8099</b>）免授权全功能直连</div>
+          </div>
+        </div>
       </div>
 
       <div class="viewer-statusbar" id="viewerStatusbar">

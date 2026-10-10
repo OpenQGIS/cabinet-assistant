@@ -1,9 +1,16 @@
 /**
  * Cabinet Assistant · 核心前端控制器 (app.js)
+ * 支持双模式：
+ * 1. 本地服务模式 (http://127.0.0.1:8099) - Python 后端免授权直连
+ * 2. GitHub Pages 模式 (openqgis.github.io) - 基于 File System Access API 原位授权读写本地文件夹
  */
 
 (function () {
   'use strict';
+
+  let appMode = 'server'; // 'server' | 'fs'
+  let fsRootHandle = null;
+  let fsPicHandle = null;
 
   let currentItems = [];
   let activeItem = null;
@@ -11,11 +18,16 @@
   let osdViewer = null;
   let currentTags = [];
 
+  const IMAGE_EXTS = new Set(['tif', 'tiff', 'jpg', 'jpeg', 'jfif', 'png', 'webp']);
+
   // DOM Elements
   const elCabinetPath = document.getElementById('cabinetPathDisplay');
   const elFileList = document.getElementById('fileList');
   const elSearchInput = document.getElementById('searchInput');
   const elViewerEmpty = document.getElementById('viewerEmpty');
+  const elConnectOverlay = document.getElementById('connectOverlay');
+  const elBtnConnectFolder = document.getElementById('btnConnectFolder');
+  const elBtnConnectFolderBig = document.getElementById('btnConnectFolderBig');
   const elViewerStatusbar = document.getElementById('viewerStatusbar');
   
   // Status counts
@@ -51,11 +63,45 @@
   const elSyncConsole = document.getElementById('syncConsoleLog');
 
   // -------------------------------------------------------------
+  // IndexedDB 存储本地文件夹句柄 (供 Pages 模式记忆授权)
+  // -------------------------------------------------------------
+  function idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('cabinet-assistant-db', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('handles');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function idbGet(key) {
+    try {
+      const db = await idbOpen();
+      return await new Promise((res) => {
+        const tx = db.transaction('handles').objectStore('handles').get(key);
+        tx.onsuccess = () => res(tx.result);
+        tx.onerror = () => res(undefined);
+      });
+    } catch (_) { return undefined; }
+  }
+
+  async function idbSet(key, val) {
+    try {
+      const db = await idbOpen();
+      return await new Promise((res) => {
+        const tx = db.transaction('handles', 'readwrite').objectStore('handles').put(val, key);
+        tx.onsuccess = () => res();
+        tx.onerror = () => res();
+      });
+    } catch (_) { }
+  }
+
+  // -------------------------------------------------------------
   // 1. 初始化
   // -------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', () => {
     initEvents();
-    loadCabinetItems();
+    bootstrapApp();
   });
 
   function initEvents() {
@@ -155,8 +201,8 @@
         showToast('请先从左侧列表选择一幅作品');
         return;
       }
-      if (window.location.protocol === 'https:' && window.location.hostname.includes('github.io')) {
-        showToast('GitHub Pages 纯网页环境无法直接调起本地 Explorer，请在本地双击 editor.bat 使用此功能');
+      if (appMode === 'fs' || (window.location.protocol === 'https:' && window.location.hostname.includes('github.io'))) {
+        showToast('GitHub Pages 模式无法直接调起本地 Explorer，请在本地双击 editor.bat 使用此功能');
         return;
       }
       try {
@@ -172,13 +218,17 @@
           showToast('打开失败: ' + (data.error || '未知错误'));
         }
       } catch (e) {
-        showToast('无法连接本地服务: ' + e.message + ' (请确认 editor.bat 正在运行)');
+        showToast('无法连接本地服务: ' + e.message);
       }
     });
 
     // 打开画廊预览
     document.getElementById('btnOpenGallery').addEventListener('click', () => {
-      window.open('/gallery/', '_blank');
+      if (appMode === 'server') {
+        window.open('/gallery/', '_blank');
+      } else {
+        window.open('https://openqgis.github.io/Cabinet/', '_blank');
+      }
     });
 
     // 同步画廊
@@ -191,34 +241,192 @@
     document.getElementById('btnCloseSettings').addEventListener('click', () => elSettingsModal.close());
     document.getElementById('btnCancelSettings').addEventListener('click', () => elSettingsModal.close());
     document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
+
+    // 连接文件夹按钮 (Pages 模式)
+    if (elBtnConnectFolder) elBtnConnectFolder.addEventListener('click', pickCabinetFolder);
+    if (elBtnConnectFolderBig) elBtnConnectFolderBig.addEventListener('click', pickCabinetFolder);
   }
 
   // -------------------------------------------------------------
-  // 2. 数据加载与列表渲染
+  // 2. 模式检测与数据加载
   // -------------------------------------------------------------
-  async function loadCabinetItems() {
+  async function bootstrapApp() {
+    // 优先检测本地 Python 服务
     try {
-      const res = await fetch('/api/items');
-      const data = await res.json();
-      if (!data.ok) {
-        showToast('加载失败: ' + (data.error || '无法读取 Cabinet'));
-        return;
-      }
+      const res = await fetch('/api/items', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) {
+          appMode = 'server';
+          elCabinetPath.textContent = '🟢 本地服务: ' + (data.cabinet_path || 'Cabinet 连接就绪');
+          if (elBtnConnectFolder) elBtnConnectFolder.style.display = 'none';
+          if (elConnectOverlay) elConnectOverlay.style.display = 'none';
 
-      elCabinetPath.textContent = data.cabinet_path || 'Cabinet 连接就绪';
-      currentItems = data.items || [];
-      updateCounts();
-      renderFileList();
-
-      // 默认选中第一幅图
-      if (currentItems.length > 0 && !activeItem) {
-        selectItem(currentItems[0]);
+          currentItems = data.items || [];
+          updateCounts();
+          renderFileList();
+          if (currentItems.length > 0 && !activeItem) selectItem(currentItems[0]);
+          return;
+        }
       }
-    } catch (e) {
-      showToast('连接本地服务异常: ' + e.message);
+    } catch (_) {
+      // 本地服务未运行或在 GitHub Pages 模式
+    }
+
+    // 切换至 File System Access 静态模式
+    appMode = 'fs';
+    if (elBtnConnectFolder) elBtnConnectFolder.style.display = 'inline-flex';
+    elCabinetPath.textContent = '☁️ GitHub Pages 模式 (待连接本地文件夹)';
+
+    // 尝试恢复以往授权的文件夹句柄
+    const restored = await tryRestoreFsHandle();
+    if (!restored) {
+      if (elConnectOverlay) elConnectOverlay.style.display = 'flex';
     }
   }
 
+  async function tryRestoreFsHandle() {
+    const savedHandle = await idbGet('cabinet_dir_handle');
+    if (!savedHandle) return false;
+
+    try {
+      // 确认权限
+      const perm = await savedHandle.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        await initFromFsHandle(savedHandle);
+        return true;
+      }
+    } catch (_) { }
+    return false;
+  }
+
+  async function pickCabinetFolder() {
+    if (!window.showDirectoryPicker) {
+      alert('当前浏览器不支持本地文件夹访问，请使用 Chrome 或 Edge 浏览器打开！');
+      return;
+    }
+
+    try {
+      const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      await idbSet('cabinet_dir_handle', handle);
+      await initFromFsHandle(handle);
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        showToast('文件夹授权失败: ' + e.message);
+      }
+    }
+  }
+
+  async function initFromFsHandle(handle) {
+    fsRootHandle = handle;
+    let picHandle = handle;
+
+    // 检查所选目录是否是 Cabinet 根目录（包含 pic 子目录）
+    try {
+      picHandle = await handle.getDirectoryHandle('pic');
+    } catch (_) {
+      // 若直接选择了 pic 目录本身
+    }
+
+    fsPicHandle = picHandle;
+    elCabinetPath.textContent = '📂 已连接: ' + handle.name;
+    if (elConnectOverlay) elConnectOverlay.style.display = 'none';
+
+    await scanFsItems(picHandle);
+  }
+
+  async function scanFsItems(picHandle) {
+    showToast('正在扫描本地空间图片与描述卡片...');
+    const items = [];
+
+    async function walk(dirHandle, pathParts) {
+      const fileMap = new Map();
+      const mdMap = new Map();
+
+      for await (const [name, entry] of dirHandle.entries()) {
+        if (entry.kind === 'file') {
+          const parts = name.split('.');
+          const ext = parts.pop().toLowerCase();
+          const stem = parts.join('.');
+
+          if (IMAGE_EXTS.has(ext)) {
+            fileMap.set(stem, { name, entry, ext });
+          } else if (ext === 'md') {
+            mdMap.set(stem, { name, entry });
+          }
+        }
+      }
+
+      for (const [stem, img] of fileMap.entries()) {
+        const md = mdMap.get(stem);
+        const folderStr = pathParts.join('/');
+        const relPath = (folderStr ? folderStr + '/' : '') + img.name;
+
+        let meta = {};
+        let body = '';
+
+        if (md) {
+          try {
+            const mdFile = await md.entry.getFile();
+            const text = await mdFile.text();
+            const parsed = parseClientFrontmatter(text);
+            meta = parsed.meta;
+            body = parsed.body;
+          } catch (_) { }
+        }
+
+        const fileObj = await img.entry.getFile();
+        const defaultSub = pathParts.join(' · ') || '未分类';
+
+        items.push({
+          id: meta.id || stem.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase(),
+          title: meta.title || stem,
+          filename: img.name,
+          rel_path: relPath,
+          folder: folderStr || 'root',
+          has_md: !!md,
+          status: meta.status || (md ? 'draft' : 'unannotated'),
+          category: meta.category || 'gis',
+          subCategory: meta.subCategory || defaultSub,
+          region: meta.region || '',
+          source: meta.source || '',
+          scale: meta.scale || '',
+          reviewNumber: meta.reviewNumber || '',
+          tags: meta.tags || [],
+          download: meta.download !== false,
+          description: body || meta.description || '',
+          file_size: fileObj.size,
+          _fileEntry: img.entry,
+          _mdEntry: md ? md.entry : null,
+          _dirHandle: dirHandle
+        });
+      }
+
+      // 递归子目录
+      for await (const [name, entry] of dirHandle.entries()) {
+        if (entry.kind === 'directory' && !name.startsWith('.') && name !== '_cache') {
+          await walk(entry, [...pathParts, name]);
+        }
+      }
+    }
+
+    await walk(picHandle, []);
+    items.sort((a, b) => (a.folder + a.title).localeCompare(b.folder + b.title));
+
+    currentItems = items;
+    updateCounts();
+    renderFileList();
+
+    if (currentItems.length > 0) {
+      selectItem(currentItems[0]);
+    } else {
+      showToast('未在所选文件夹下找到测绘图片，请确认选中的是 Cabinet 或 pic 文件夹');
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 3. 列表渲染与计数
+  // -------------------------------------------------------------
   function updateCounts() {
     const total = currentItems.length;
     const done = currentItems.filter(i => i.status === 'done').length;
@@ -282,8 +490,12 @@
         if (item.status === 'draft') statusBadge = '<span class="status-badge-mini draft">DRAFT</span>';
         if (item.status === 'unannotated') statusBadge = '<span class="status-badge-mini new">NEW</span>';
 
+        const thumbSrc = (appMode === 'server')
+          ? `/api/thumb?path=${encodeURIComponent(item.rel_path)}`
+          : (item._blobUrl || '');
+
         itemEl.innerHTML = `
-          <img class="file-thumb" src="/api/thumb?path=${encodeURIComponent(item.rel_path)}" alt="" loading="lazy">
+          <img class="file-thumb" src="${thumbSrc}" alt="" loading="lazy">
           <div class="file-info">
             <div class="file-title-row">
               <span class="file-title" title="${item.title}">${item.title}</span>
@@ -304,16 +516,16 @@
   }
 
   // -------------------------------------------------------------
-  // 3. 作品选中与 OpenSeadragon 深览视窗
+  // 4. 作品深览巡视台 (OpenSeadragon)
   // -------------------------------------------------------------
-  function selectItem(item) {
+  async function selectItem(item) {
     activeItem = item;
     renderFileList();
     populateForm(item);
-    loadOsdImage(item);
+    await loadOsdImage(item);
   }
 
-  function loadOsdImage(item) {
+  async function loadOsdImage(item) {
     elViewerEmpty.style.display = 'none';
 
     if (osdViewer) {
@@ -321,9 +533,17 @@
       osdViewer = null;
     }
 
-    const imgUrl = `/api/image?path=${encodeURIComponent(item.rel_path)}`;
+    let imgUrl = '';
+    if (appMode === 'server') {
+      imgUrl = `/api/image?path=${encodeURIComponent(item.rel_path)}`;
+    } else if (item._fileEntry) {
+      if (!item._blobUrl) {
+        const f = await item._fileEntry.getFile();
+        item._blobUrl = URL.createObjectURL(f);
+      }
+      imgUrl = item._blobUrl;
+    }
 
-    // 读取图像自然分辨率
     const tempImg = new Image();
     tempImg.onload = function () {
       const w = tempImg.naturalWidth;
@@ -335,7 +555,6 @@
       elInfoAspect.textContent = `${aspect}:1 构图`;
       elInfoFilesize.textContent = `${sizeMb} MB 原图`;
 
-      // 初始化 OpenSeadragon 单图视口
       osdViewer = OpenSeadragon({
         id: 'osdContainer',
         prefixUrl: 'https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/images/',
@@ -364,7 +583,7 @@
   }
 
   // -------------------------------------------------------------
-  // 4. 表单数据填充与标签管理
+  // 5. 表单字段填充与 Markdown 生成
   // -------------------------------------------------------------
   function populateForm(item) {
     elInputTitle.value = item.title || '';
@@ -377,13 +596,11 @@
     elInputDescription.value = item.description || '';
     elInputDownload.checked = item.download !== false;
 
-    // 状态
     const statusVal = item.status === 'draft' ? 'draft' : 'done';
     const radio = document.querySelector(`input[name="itemStatus"][value="${statusVal}"]`);
     if (radio) radio.checked = true;
     updateFormStatusBadge(statusVal);
 
-    // 标签
     currentTags = Array.isArray(item.tags) ? [...item.tags] : [];
     renderTags();
     updateRawMarkdownPreview();
@@ -452,7 +669,7 @@
   }
 
   // -------------------------------------------------------------
-  // 5. 保存与同步
+  // 6. 保存与同步
   // -------------------------------------------------------------
   async function saveCurrentItem() {
     if (!activeItem) {
@@ -478,29 +695,54 @@
       description: elInputDescription.value.trim()
     };
 
-    try {
-      const res = await fetch('/api/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: jsonBody(payload)
-      });
-      const data = await res.json();
-      if (data.ok) {
-        showToast(`已成功保存: ${payload.title}.md`);
-        // 更新本地对象状态
+    if (appMode === 'server') {
+      try {
+        const res = await fetch('/api/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonBody(payload)
+        });
+        const data = await res.json();
+        if (data.ok) {
+          showToast(`已成功保存: ${payload.title}.md`);
+          Object.assign(activeItem, payload);
+          activeItem.has_md = true;
+          updateCounts();
+          renderFileList();
+        } else {
+          showToast('保存失败: ' + (data.error || '未知错误'));
+        }
+      } catch (e) {
+        showToast('保存异常: ' + e.message);
+      }
+    } else {
+      // Pages 模式：File System Access 原位写入本地磁盘
+      try {
+        const dir = activeItem._dirHandle;
+        const stem = activeItem.filename.split('.').slice(0, -1).join('.');
+        const mdName = `${stem}.md`;
+        const fh = await dir.getFileHandle(mdName, { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(elRawMarkdown.value);
+        await writable.close();
+
+        showToast(`🎉 已原位写回本地文件: ${mdName}`);
         Object.assign(activeItem, payload);
         activeItem.has_md = true;
         updateCounts();
         renderFileList();
-      } else {
-        showToast('保存失败: ' + (data.error || '未知错误'));
+      } catch (e) {
+        showToast('写入本地文件失败: ' + e.message);
       }
-    } catch (e) {
-      showToast('保存异常: ' + e.message);
     }
   }
 
   async function syncCabinet() {
+    if (appMode !== 'server') {
+      showToast('GitHub Pages 模式无法直接调用本地构建脚本，请运行本地 editor.bat 执行一键同步！');
+      return;
+    }
+
     elSyncConsole.textContent = '⏳ 正在执行 build_cabinet.py 生成切片、转换下载 WebP 并打包 manifest...\n\n';
     elSyncModal.showModal();
 
@@ -520,9 +762,13 @@
   }
 
   // -------------------------------------------------------------
-  // 6. 配置弹窗
+  // 7. 配置弹窗与辅助函数
   // -------------------------------------------------------------
   async function openSettingsModal() {
+    if (appMode !== 'server') {
+      showToast('当前为 GitHub Pages 静态模式，请通过顶部「连接本地文件夹」更换路径');
+      return;
+    }
     try {
       const res = await fetch('/api/config');
       const cfg = await res.json();
@@ -547,16 +793,55 @@
       if (data.ok) {
         showToast('配置已更新，正在重新加载作品...');
         elSettingsModal.close();
-        loadCabinetItems();
+        bootstrapApp();
       }
     } catch (e) {
       showToast('保存配置异常: ' + e.message);
     }
   }
 
-  // -------------------------------------------------------------
-  // 辅助函数
-  // -------------------------------------------------------------
+  function parseClientFrontmatter(content) {
+    const meta = {};
+    let body = '';
+    const match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+    if (!match) return { meta, body: content.trim() };
+
+    const yamlBlock = match[1];
+    body = match[2].trim();
+    let currentKey = null;
+
+    yamlBlock.split('\n').forEach(line => {
+      line = line.trimEnd();
+      if (!line || line.startsWith('#')) return;
+
+      const listMatch = line.match(/^\s*-\s+(.*)$/);
+      if (listMatch && currentKey) {
+        if (!Array.isArray(meta[currentKey])) meta[currentKey] = [];
+        meta[currentKey].push(listMatch[1].trim().replace(/^['"]|['"]$/g, ''));
+        return;
+      }
+
+      const kvMatch = line.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/);
+      if (kvMatch) {
+        currentKey = kvMatch[1].trim();
+        const rawVal = kvMatch[2].trim();
+        if (rawVal === '') {
+          meta[currentKey] = [];
+        } else if (rawVal.startsWith('[') && rawVal.endsWith(']')) {
+          meta[currentKey] = rawVal.slice(1, -1).split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+        } else if (rawVal.toLowerCase() === 'true') {
+          meta[currentKey] = true;
+        } else if (rawVal.toLowerCase() === 'false') {
+          meta[currentKey] = false;
+        } else {
+          meta[currentKey] = rawVal.replace(/^['"]|['"]$/g, '');
+        }
+      }
+    });
+
+    return { meta, body };
+  }
+
   function jsonBody(obj) {
     return JSON.stringify(obj);
   }
