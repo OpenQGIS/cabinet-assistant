@@ -399,7 +399,7 @@
     }
 
     fsPicHandle = picHandle;
-    elCabinetPath.textContent = '📂 已连接: ' + handle.name;
+    elCabinetPath.textContent = handle.name;
     if (elConnectOverlay) elConnectOverlay.style.display = 'none';
 
     await scanFsItems(picHandle);
@@ -549,7 +549,7 @@
 
       const titleEl = document.createElement('div');
       titleEl.className = 'folder-title';
-      titleEl.innerHTML = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> <span>${folder}</span>`;
+      titleEl.innerHTML = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg> <span>${folder}</span>`;
       groupEl.appendChild(titleEl);
 
       groups[folder].forEach(item => {
@@ -678,7 +678,7 @@
 
   function updateFormStatusBadge(status) {
     elFormStatusBadge.className = 'form-status-badge ' + (status === 'done' ? 'done' : 'draft');
-    elFormStatusBadge.textContent = status === 'done' ? '🚀 已完成 (DONE)' : '🚧 草稿 (DRAFT)';
+    elFormStatusBadge.textContent = status === 'done' ? '已完成 (DONE)' : '草稿 (DRAFT)';
   }
 
   function renderTags() {
@@ -686,7 +686,7 @@
     currentTags.forEach(tag => {
       const tagItem = document.createElement('span');
       tagItem.className = 'tag-item';
-      tagItem.innerHTML = `<span>${tag}</span><span class="tag-remove" data-tag="${tag}">✕</span>`;
+      tagItem.innerHTML = `<span>${tag}</span><button type="button" class="tag-remove" data-tag="${tag}" aria-label="移除标签"><svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
       tagItem.querySelector('.tag-remove').addEventListener('click', () => removeTag(tag));
       elTagsList.appendChild(tagItem);
     });
@@ -796,7 +796,7 @@
         await writable.write(elRawMarkdown.value);
         await writable.close();
 
-        showToast(`🎉 已原位写回本地文件: ${mdName}`);
+        showToast(`已原位写回本地文件: ${mdName}`);
         Object.assign(activeItem, payload);
         activeItem.has_md = true;
         updateCounts();
@@ -813,7 +813,7 @@
       return;
     }
 
-    elSyncConsole.textContent = '⏳ 正在执行 build_cabinet.py 生成切片、转换下载 WebP 并打包 manifest...\n\n';
+    elSyncConsole.textContent = '正在执行 build_cabinet.py 生成切片、转换下载 WebP 并打包 manifest...\n\n';
     elSyncModal.showModal();
 
     try {
@@ -821,13 +821,13 @@
       const data = await res.json();
       if (data.ok) {
         elSyncConsole.textContent = data.output || '同步成功！';
-        showToast('🎉 画廊全站同步编译成功！');
+        showToast('画廊全站同步编译成功');
       } else {
-        elSyncConsole.textContent = '❌ 同步出错:\n' + (data.output || data.error);
+        elSyncConsole.textContent = '同步出错:\n' + (data.output || data.error);
         showToast('同步执行失败，请查看日志');
       }
     } catch (e) {
-      elSyncConsole.textContent = '❌ 网络请求异常: ' + e.message;
+      elSyncConsole.textContent = '网络请求异常: ' + e.message;
     }
   }
 
@@ -843,7 +843,7 @@
         if (input) input.value = cfg.cabinet_path || '';
         const statusEl = document.getElementById('settingPathStatus');
         if (statusEl) {
-          statusEl.innerHTML = `💡 支持选择 <code>Cabinet</code> 根目录（例如 <code>D:\\website\\Cabinet</code>），也可直接选择 <code>pic</code> 文件夹，系统会自动向上解析。`;
+          statusEl.innerHTML = `支持选择 <code>Cabinet</code> 根目录（例如 <code>D:\\website\\Cabinet</code>），也可直接选择 <code>pic</code> 文件夹，系统会自动向上解析。`;
         }
         elSettingsModal.showModal();
       } catch (e) {
@@ -874,10 +874,10 @@
           const statusEl = document.getElementById('settingPathStatus');
           if (!data.has_pic) {
             showToast(`已选路径：${data.path}（未检测到 pic 文件夹）`);
-            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-red)">⚠️ 提示：目录 <code>${data.path}</code> 下未发现 <code>pic/</code> 文件夹，请确认是否选择正确！</span>`;
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-red)">未发现 pic/ 文件夹，请确认是否选择正确</span>`;
           } else {
             showToast(`已选择路径：${data.path}`);
-            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-green)">✓ 检测到 <code>pic/</code> 文件夹，路径有效！点击「保存并重新加载」即可应用。</span>`;
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--accent-green)">已检测到 pic/ 文件夹，路径有效。点击「保存并重新加载」即可应用。</span>`;
           }
         }
       } catch (e) {

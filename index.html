@@ -25,7 +25,7 @@
           <span id="cabinetPathDisplay" class="path-text">正在连接 Cabinet...</span>
         </span>
         <button class="btn ghost mini" id="btnChangePathTop" type="button" title="更换画廊文件夹路径">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg>
           <span>更改路径</span>
         </button>
       </div>
@@ -33,23 +33,23 @@
 
     <div class="header-right">
       <button class="btn primary" id="btnConnectFolder" style="display:none;" title="选择本地 Cabinet 或 pic 文件夹授权读写">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg>
         <span>选择本地文件夹</span>
       </button>
       <button class="btn ghost" id="btnSettings" title="设置 Cabinet 仓库路径">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
         <span>路径设置</span>
       </button>
       <button class="btn ghost" id="btnOpenExplorer" title="在系统资源管理器中打开当前图片或画廊目录">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M14 3h7v7M10 14L21 3M19 13v8H3V5h8"/></svg>
         <span>打开文件位置</span>
       </button>
       <button class="btn ghost" id="btnOpenGallery" title="在浏览器打开 Cabinet 画廊预览">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><polygon points="6 3 20 12 6 21 6 3"/></svg>
         <span>预览画廊</span>
       </button>
       <button class="btn primary" id="btnSyncCabinet" title="执行 build_cabinet.py 生成切片、下载图并同步 manifest">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M21 2v6h-6M3 22v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L21 8M1 16l2.64 2.36A9 9 0 0 0 20.49 15"/></svg>
         <span>一键编译同步画廊</span>
       </button>
     </div>
@@ -61,7 +61,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-search">
         <div class="search-input-wrap">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16" y2="16"/></svg>
           <input type="text" id="searchInput" placeholder="搜索图名、ID、地点...">
         </div>
         <div class="filter-pills">
@@ -84,23 +84,25 @@
       </div>
 
       <div class="viewer-empty-placeholder" id="viewerEmpty">
-        <svg class="ic large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <svg class="ic large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p id="emptyPromptTitle">请从左侧选择一幅空间测绘图或遥感影像</p>
         <span id="emptyPromptSub">滚轮缩放 · 拖拽平移 · 1:1 细节巡礼</span>
         <button class="btn primary" id="btnEmptySetPath" style="display:none;margin-top:14px;">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg>
           <span>设置画廊文件夹路径</span>
         </button>
       </div>
 
       <div class="viewer-connect-overlay" id="connectOverlay" style="display:none;">
         <div class="connect-card">
-          <div class="connect-icon">📂</div>
+          <div class="connect-icon">
+            <svg class="ic" style="width:40px;height:40px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg>
+          </div>
           <h4>当前处于 GitHub Pages 纯静态模式</h4>
           <p>公网网页无法直接访问你本地电脑的磁盘文件。请点击下方按钮，授权选择你本地电脑的 <b>Cabinet 文件夹</b>（例如 <code>D:\website\Cabinet</code> 或 <code>pic</code>），即可在纯网页中原位读写与标注大图！</p>
           <div class="connect-actions">
             <button class="btn primary" id="btnConnectFolderBig">选择本地 Cabinet 文件夹</button>
-            <div class="connect-tip">💡 提示：也可以在本地双击运行 <code>editor.bat</code>（访问 <b>http://127.0.0.1:8099</b>）免授权全功能直连</div>
+            <div class="connect-tip">提示：也可以在本地双击运行 <code>editor.bat</code>（访问 <b>http://127.0.0.1:8099</b>）免授权全功能直连</div>
           </div>
         </div>
       </div>
@@ -139,11 +141,17 @@
           <div class="status-radio-group">
             <label class="status-radio done">
               <input type="radio" name="itemStatus" value="done" checked>
-              <span>🚀 已完成待上架 (done)</span>
+              <span class="status-label">
+                <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>已完成待上架 (done)</span>
+              </span>
             </label>
             <label class="status-radio draft">
               <input type="radio" name="itemStatus" value="draft">
-              <span>🚧 草稿编辑中 (draft)</span>
+              <span class="status-label">
+                <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"><path d="M12 20h9M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z"/></svg>
+                <span>草稿编辑中 (draft)</span>
+              </span>
             </label>
           </div>
           <div class="form-tip">标记为 <b>done</b> 的作品才会被编译进画廊；<b>draft</b> 会保留在本地，不上线。</div>
@@ -236,8 +244,14 @@
         <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:4px;">
           <span style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);">YAML Frontmatter & Markdown 源码</span>
           <div style="display:flex;gap:6px;">
-            <button class="btn ghost mini" id="btnCopyRawMd" type="button" title="一键复制 Markdown 源码">复制源码</button>
-            <button class="btn secondary mini" id="btnBackToForm" type="button" title="返回空间事实表单">返回表单</button>
+            <button class="btn ghost mini" id="btnCopyRawMd" type="button" title="一键复制 Markdown 源码">
+              <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><rect x="9" y="9" width="13" height="13"/><path d="M5 15H2V2h13v3"/></svg>
+              <span>复制源码</span>
+            </button>
+            <button class="btn secondary mini" id="btnBackToForm" type="button" title="返回空间事实表单">
+              <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>返回表单</span>
+            </button>
           </div>
         </div>
         <textarea id="rawMarkdownPreview" class="raw-code-editor" readonly spellcheck="false"></textarea>
@@ -245,9 +259,12 @@
 
       <!-- Sticky Save Bar -->
       <div class="form-footer">
-        <button class="btn secondary" id="btnResetForm">重置修改</button>
+        <button class="btn secondary" id="btnResetForm">
+          <svg class="ic mini" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          <span>重置修改</span>
+        </button>
         <button class="btn primary" id="btnSaveMd">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M19 21H5V3h11l5 5v13z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           <span>保存 MD 卡片 (Ctrl+S)</span>
         </button>
       </div>
@@ -259,7 +276,9 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>设置 Cabinet 仓库路径</h3>
-        <button class="btn icon-only ghost" id="btnCloseSettings">✕</button>
+        <button class="btn icon-only ghost" id="btnCloseSettings" title="关闭">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -267,16 +286,16 @@
           <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
             <input type="text" id="settingCabinetPath" class="font-mono" style="flex:1;" placeholder="例如 D:\website\Cabinet">
             <button class="btn secondary" id="btnPickFolderNative" type="button" title="唤起系统原生窗口查找路径">
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M2 4h7l2 3h11v13H2V4z"/></svg>
               <span>浏览选择...</span>
             </button>
             <button class="btn ghost" id="btnOpenExplorerSetting" type="button" title="在系统资源管理器中打开此文件夹">
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><path d="M14 3h7v7M10 14L21 3M19 13v8H3V5h8"/></svg>
               <span>打开</span>
             </button>
           </div>
           <div class="form-tip" id="settingPathStatus">
-            💡 支持选择 <code>Cabinet</code> 项目根目录（例如 <code>D:\website\Cabinet</code>），也可直接选择 <code>pic</code> 文件夹，系统会自动向上解析项目根目录。
+            支持选择 <code>Cabinet</code> 项目根目录（例如 <code>D:\website\Cabinet</code>），也可直接选择 <code>pic</code> 文件夹，系统会自动向上解析项目根目录。
           </div>
         </div>
       </div>
@@ -292,7 +311,9 @@
     <div class="modal-card sync-card">
       <div class="modal-header">
         <h3>全站编译同步日志</h3>
-        <button class="btn icon-only ghost" id="btnCloseSync">✕</button>
+        <button class="btn icon-only ghost" id="btnCloseSync" title="关闭">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
       <div class="modal-body">
         <pre class="sync-console" id="syncConsoleLog">正在执行 build_cabinet.py ...</pre>

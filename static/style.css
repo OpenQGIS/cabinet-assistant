@@ -57,14 +57,23 @@ body {
 .ic {
   width: 14px;
   height: 14px;
-  stroke-width: 2;
+  stroke-width: 1.75;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
   vertical-align: middle;
+}
+
+.ic.mini {
+  width: 11px;
+  height: 11px;
 }
 
 .ic.large {
   width: 32px;
   height: 32px;
   stroke-width: 1.5;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
 }
 
 /* ----------------- Header ----------------- */
@@ -826,12 +835,25 @@ textarea {
 }
 
 .tag-remove {
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
   color: var(--text-dim);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
 }
 
 .tag-remove:hover {
   color: #ef4444;
+}
+
+.status-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tags-input-container input {
