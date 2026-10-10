@@ -133,6 +133,27 @@
       });
     });
 
+    const btnBackToForm = document.getElementById('btnBackToForm');
+    if (btnBackToForm) {
+      btnBackToForm.addEventListener('click', () => {
+        const metaBtn = document.querySelector('.tab-btn[data-tab="metaTab"]');
+        if (metaBtn) metaBtn.click();
+      });
+    }
+
+    const btnCopyRawMd = document.getElementById('btnCopyRawMd');
+    if (btnCopyRawMd) {
+      btnCopyRawMd.addEventListener('click', async () => {
+        const text = document.getElementById('rawMarkdownPreview').value;
+        try {
+          await navigator.clipboard.writeText(text);
+          showToast('已复制完整 Markdown 源码到剪贴板');
+        } catch (_) {
+          showToast('复制失败，请手动选中文本复制');
+        }
+      });
+    }
+
     // 状态单选框变化
     document.querySelectorAll('input[name="itemStatus"]').forEach(radio => {
       radio.addEventListener('change', (e) => {

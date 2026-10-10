@@ -33,6 +33,10 @@
   padding: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   background-color: var(--bg-deep);
   color: var(--text-main);
@@ -646,6 +650,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.form-scrollable[hidden] {
+  display: none !important;
 }
 
 .form-group {
